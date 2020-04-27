@@ -39,7 +39,9 @@ namespace RanterTools.Networking
             set
             {
                 token = value;
-                PlayerPrefs.SetString("Token", JsonUtility.ToJson(token));
+                if (token == null) PlayerPrefs.DeleteKey("Token");
+                else
+                    PlayerPrefs.SetString("Token", JsonUtility.ToJson(token));
             }
         }
 
