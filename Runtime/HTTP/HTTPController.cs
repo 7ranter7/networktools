@@ -3,6 +3,9 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Text;
+using System.IO;
+using System.Linq;
 using RanterTools.Base;
 //using Newtonsoft.Json;
 
@@ -12,248 +15,386 @@ namespace RanterTools.Networking
     /// <summary>
     /// HTTP controller for async requests.
     /// </summary>
-    public class HTTPController : SingletonBehaviour<HTTPController>
+    public partial class HTTPController : SingletonBehaviour<HTTPController>
     {
         #region Global State
-        static string token;
+        public static Dictionary<string, string> mocks;
+
+        static LocalToken token;
         /// <summary>
         /// Current access token.
         /// </summary>
         /// <value>Return current access token if it exists.</value>
-        public static string Token
+        public static LocalToken Token
         {
             get
             {
-                if (token == null)
+                if (!TokenRead)
                 {
-                    if (PlayerPrefs.HasKey("Token")) token = PlayerPrefs.GetString("Token", null);
+                    if (PlayerPrefs.HasKey("Token")) token = JsonUtility.FromJson<LocalToken>(PlayerPrefs.GetString("Token", null));
+                    TokenRead = true;
                 }
                 return token;
             }
             set
             {
                 token = value;
-                PlayerPrefs.SetString("Token", token);
-                lastTokenDateTime = DateTime.Now;
+                PlayerPrefs.SetString("Token", JsonUtility.ToJson(token));
             }
         }
-        static DateTime lastTokenDateTime;
+
         /// <summary>
-        /// Last token received time.
+        /// If token read from PlayerPrefs is true. Set false for one more trying.
         /// </summary>
-        public static DateTime LastTokenDateTime;
+        /// <value>If token read from PlayerPrefs is true.</value>
+        public static bool TokenRead { get; set; } = false;
+
+
+        static MocksResource mocksResource = MocksResource.NONE;
+        /// <summary>
+        /// Resource for morks.
+        /// </summary>
+        /// <value>None if mocks isn't used.</value>
+        public static MocksResource MocksResource { get { return mocksResource; } set { mocksResource = value; UpdateMocks(); } }
+
         static string url = "http://localhost/";
+        static string TokenPrefix = "JWT";
         #endregion Global State
 
 
         #region Global Methods
-        /// <summary>
-        /// Send json post request with auth token.
-        /// </summary>
-        /// <param name="controller">Controller of end point.</param>
-        /// <param name="method">Methods of end point.</param>
-        /// <param name="param">Serializable parameter.</param>
-        /// <typeparam name="T">IWorker<K,O>.</typeparam>
-        /// <typeparam name="K">Result serializable parameter of request.</typeparam>
-        /// <typeparam name="O">Request serializable parameter.</typeparam>
-        public static void JSONPostAuth<T, K, O>(string controller, string method, O param)
-            where T : IWorker<K, O>, new()
-            where O : class
-        {
-            Instance.StartCoroutine(JSONPostRequest<T, K, O>(controller, method, param, null, token));
-        }
-        /// <summary>
-        /// Send json post auth request without parameters.
-        /// </summary>
-        /// <param name="controller">Controller of end point.</param>
-        /// <param name="method">Methods of end point.</param>
-        /// <typeparam name="T">IWorker<K,O>.</typeparam>
-        /// <typeparam name="K">Result serializable parameter of request.</typeparam>
-        public static void JSONPostAuth<T, K>(string controller, string method)
-            where T : IWorker<K, object>, new()
-        {
-            Instance.StartCoroutine(JSONPostRequest<T, K, object>(controller, method, null, null, token));
-        }
-        /// <summary>
-        ///  Send json post request without auth token.
-        /// </summary>
-        /// <param name="controller">Controller of end point.</param>
-        /// <param name="method">Methods of end point.</param>
-        /// <param name="param">Serializable parameter.</param>
-        /// <param name="worker">Concret worker for some data.</param>
-        /// <typeparam name="T">IWorker<K,O>.</typeparam>
-        /// <typeparam name="K">Result serializable parameter of request.</typeparam>
-        /// <typeparam name="O">Request serializable parameter.</typeparam>
-        public static void JSONPost<T, K, O>(string controller, string method, O param, IWorker<K, O> worker = null)
-            where T : IWorker<K, O>, new()
-            where O : class
-        {
-            Instance.StartCoroutine(JSONPostRequest<T, K, O>(controller, method, param, worker, null));
-        }
-
-        static IEnumerator JSONPostRequest<T, K, O>(string controller, string method, O param, IWorker<K, O> worker = null, string token = null)
-            where T : IWorker<K, O>, new()
-            where O : class
+        static void GetRequestInit<O, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, Dictionary<string, string>> worker,
+                                        Dictionary<string, string> query = null, IWorker<O, Dictionary<string, string>> workerDefault = null,
+                                        string token = null)
+        where W : IWorker<O, Dictionary<string, string>>, new()
+        where O : class
         {
             url = Instance.urlParam;
-            UnityWebRequest uwr = new UnityWebRequest(url + "/" + controller + "/" + method, "POST");
-
-            string json = null;
-            byte[] jsonToSend = new byte[1];
-
-            if (param != null)
+            TokenPrefix = Instance.tokenPrefix;
+            string requestUrl = $"{url}/{ endpoint}";
+            byte[] queryUrlString = null;
+            if (query != null)
             {
-                json = JsonUtility.ToJson(param);//JsonConvert.SerializeObject(param);
-                jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
-
+                queryUrlString = UnityWebRequest.SerializeSimpleForm(query);
+                requestUrl = $"{requestUrl}?{Encoding.UTF8.GetString(queryUrlString)}";
             }
 
-            if (!string.IsNullOrEmpty(token))
-                uwr.SetRequestHeader("Authorization", "Bearer " + token);
-
-            ToolsDebug.Log("Sending : " + json);
-            uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
-            uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
-            uwr.SetRequestHeader("Content-Type", "application/json");
-
-
-            //Send the request then wait here until it returns
-            yield return uwr.SendWebRequest();
-
-            IWorker<K, O> workerTmp;
-            if (worker == null)
+            if (typeof(O) == typeof(Texture2D))
             {
-                workerTmp = new T();
-            }
-            else
-            {
-                workerTmp = worker;
-            }
-
-            if (param != null)
-                workerTmp.Request = JsonUtility.FromJson<O>(new System.Text.UTF8Encoding().GetString(uwr.uploadHandler.data));//JsonConvert.DeserializeObject<O>(new System.Text.UTF8Encoding().GetString(uwr.uploadHandler.data));
-            if (uwr.isNetworkError || !string.IsNullOrEmpty(uwr.error))
-            {
-                workerTmp.ErrorProcessing(uwr.error);
-            }
-            else
-            {
-                try
+                if (MocksResource == MocksResource.NONE)
+                    uwr = UnityWebRequestTexture.GetTexture($"{requestUrl}");
+                else
                 {
-                    var response = JsonUtility.FromJson<K>(uwr.downloadHandler.text);// JsonConvert.DeserializeObject<K>(uwr.downloadHandler.text);
-                    ToolsDebug.Log(uwr.downloadHandler.text);
-                    if (response != null)
-                    {
-                        workerTmp.Execute(response);
-
-                    }
-                    else
-                    {
-                        workerTmp.ErrorProcessing("Unknown Error");
-                    }
-                }
-                catch (ArgumentException)
-                {
-                    ToolsDebug.Log(uwr.downloadHandler.text);
+                    uwr = UnityWebRequestTexture.GetTexture($"{mocks[typeof(W).ToString()]}");
+                    ToolsDebug.Log($"Use mock for texture. Key:{typeof(W).ToString()} Value:{mocks[typeof(W).ToString()]}");
                 }
             }
-
-        }
-
-
-
-
-        /// <summary>
-        /// Get JSON data from get request with auth token.
-        /// </summary>
-        /// <param name="controller">Controller of end point.</param>
-        /// <param name="method">Methods of end point.</param>
-        /// <param name="worker">Concret worker for some data.</param>
-        /// <typeparam name="T">IWorker<K,O>.</typeparam>
-        /// <typeparam name="K">Result serializable parameter of request.</typeparam>
-        public static void JSONGetAuth<T, K>(string controller, string method, IWorker<K, string> worker = null)
-        where T : IWorker<K, string>, new()
-        {
-            Instance.StartCoroutine(JSONGetRequest<T, K>(controller, method, worker, Token));
-        }
-
-        /// <summary>
-        /// Get JSON data from get request without auth token.
-        /// </summary>
-        /// <param name="controller">Controller of end point.</param>
-        /// <param name="method">Methods of end point.</param>
-        /// <param name="worker">Concret worker for some data.</param>
-        /// <typeparam name="T">IWorker<K,O>.</typeparam>
-        /// <typeparam name="K">Result serializable parameter of request.</typeparam>
-        public static void JSONGet<T, K>(string controller, string method, IWorker<K, string> worker = null)
-            where T : IWorker<K, string>, new()
-        {
-            Instance.StartCoroutine(JSONGetRequest<T, K>(controller, method, worker));
-        }
-
-        static IEnumerator JSONGetRequest<T, K>(string controller, string method, IWorker<K, string> worker, string token = null)
-        where T : IWorker<K, string>, new()
-        {
-            url = Instance.urlParam;
-            UnityWebRequest uwr = new UnityWebRequest(url + "/" + controller + "/" + method + "/", UnityWebRequest.kHttpVerbGET);
-
-            string json = null;
-            byte[] jsonToSend = new byte[1];
-            if (!string.IsNullOrEmpty(token))
-                uwr.SetRequestHeader("Authorization", "JWT " + token);
-
-            ToolsDebug.Log(url + "/" + controller + "/" + method + " Sending : " + json + " " + uwr.GetRequestHeader("Authorization"));
-            uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
-            uwr.SetRequestHeader("Content-Type", "application/json");
-
-
-            yield return uwr.SendWebRequest();
-
-            IWorker<K, string> workerTmp;
-            if (worker == null)
+            else
             {
-                workerTmp = new T();
+                uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbGET);
+                uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            }
+            if (!string.IsNullOrEmpty(token))
+                uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
+
+
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbGET}: {requestUrl} {uwr.GetRequestHeader("Authorization")}");
+
+            if (workerDefault == null)
+            {
+                worker = new W();
             }
             else
             {
-                workerTmp = worker;
+                worker = workerDefault;
             }
-            if (uwr.isNetworkError || !string.IsNullOrEmpty(uwr.error))
+            worker.Request = query;
+        }
+
+        static void GetResponseWorker<O, I>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
+        where O : class
+        where I : class
+        {
+            if (unityWebRequest.isNetworkError || !string.IsNullOrEmpty(unityWebRequest.error))
             {
-                if (uwr.responseCode != 400)
-                    workerTmp.ErrorProcessing(uwr.error);
+                if (unityWebRequest.responseCode != 400)
+                    worker.ErrorProcessing(unityWebRequest.responseCode, unityWebRequest.error);
                 else
                 {
                     string error = "";
-                    if (uwr?.downloadHandler?.text != null) error += uwr.downloadHandler.text;
-                    workerTmp.ErrorProcessing(error);
+                    if (unityWebRequest?.downloadHandler?.text != null) error += unityWebRequest.downloadHandler.text;
+                    worker.ErrorProcessing(unityWebRequest.responseCode, error);
                 }
             }
             else
             {
                 try
                 {
-                    var response = JsonUtility.FromJson<K>(uwr.downloadHandler.text);
-                    Debug.Log(uwr.downloadHandler.text);
-                    if (response != null)
+                    O response;
+                    if (typeof(O) == typeof(Texture2D))
                     {
-                        workerTmp.Execute(response);
+                        Texture2D image = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+                        image = DownloadHandlerTexture.GetContent(unityWebRequest);
+                        if (image == null)
+                            response = default(O);
+                        else
+                            response = image as O;
                     }
                     else
                     {
-                        workerTmp.ErrorProcessing("Unknown Error");
+                        string downloadedText;
+                        if (MocksResource == MocksResource.NONE) downloadedText = unityWebRequest.downloadHandler.text;
+                        else
+                        {
+                            downloadedText = mocks[worker.GetType().ToString()];
+                            ToolsDebug.Log($"Use mock with key: {worker.GetType().ToString()}");
+                        }
+                        ToolsDebug.Log($"Response: {downloadedText}");
+                        if (serializer == null)
+                            response = JsonUtility.FromJson<O>(downloadedText);
+                        else response = serializer(downloadedText);
+                    }
+
+                    if (response != null)
+                    {
+                        worker.Execute(response);
+                    }
+                    else
+                    {
+                        worker.ErrorProcessing(unityWebRequest.responseCode, "Unknown Error");
                     }
                 }
                 catch (ArgumentException)
                 {
-                    ToolsDebug.Log(uwr.downloadHandler.text);
+                    ToolsDebug.Log(unityWebRequest.downloadHandler.text);
                 }
             }
+        }
 
+        static void PostRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
+                                            IWorker<O, I> workerDefault = null,
+                                            string token = null, Func<I, string> serializer = null)
+        where W : IWorker<O, I>, new()
+        where O : class
+        where I : class
+        {
+            url = Instance.urlParam;
+            TokenPrefix = Instance.tokenPrefix;
+            string requestUrl = $"{url}/{endpoint}";
+
+            string json = null;
+            byte[] jsonToSend = new byte[1];
+
+            uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbPOST);
+            if (typeof(I) == typeof(Texture2D))
+            {
+                Texture2D sendTexture = param as Texture2D;
+                jsonToSend = ImageConversion.EncodeToPNG(sendTexture);
+                uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+                uwr.SetRequestHeader("Content-Type", "image/png");
+            }
+            else
+            {
+                if (param != null)
+                {
+                    if (serializer == null)
+                        json = JsonUtility.ToJson(param);
+                    else json = serializer(param);
+                    jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+
+                }
+                uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+                uwr.uploadHandler.contentType = "application/json";
+            }
+            uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+
+            if (!string.IsNullOrEmpty(token))
+                uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
+
+
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")}");
+
+            if (workerDefault == null)
+            {
+                worker = new W();
+            }
+            else
+            {
+                worker = workerDefault;
+            }
+            worker.Request = param;
+        }
+
+        static void PostResponseWorker<O, I, W>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
+        where O : class
+        {
+            if (unityWebRequest.isNetworkError || !string.IsNullOrEmpty(unityWebRequest.error))
+            {
+                if (unityWebRequest.responseCode != 400)
+                    worker.ErrorProcessing(unityWebRequest.responseCode, unityWebRequest.error);
+                else
+                {
+                    string error = "";
+                    if (unityWebRequest?.downloadHandler?.text != null) error += unityWebRequest.downloadHandler.text;
+                    worker.ErrorProcessing(unityWebRequest.responseCode, error);
+                }
+            }
+            else
+            {
+                try
+                {
+                    O response;
+                    string downloadedText;
+                    if (MocksResource == MocksResource.NONE) downloadedText = unityWebRequest.downloadHandler.text;
+                    else
+                    {
+                        downloadedText = mocks[worker.GetType().ToString()];
+                        ToolsDebug.Log($"Use mock with key: {worker.GetType().ToString()}");
+                    }
+                    ToolsDebug.Log($"Response: {downloadedText}");
+                    if (serializer == null)
+                        response = JsonUtility.FromJson<O>(downloadedText);
+                    else response = serializer(downloadedText);
+                    if (response != null)
+                    {
+                        worker.Execute(response);
+                    }
+                    else
+                    {
+                        worker.ErrorProcessing(unityWebRequest.responseCode, "Unknown Error");
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    ToolsDebug.Log(unityWebRequest.downloadHandler.text);
+                }
+            }
+        }
+
+        static void PutRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
+                                            IWorker<O, I> workerDefault = null,
+                                            string token = null, Func<I, string> serializer = null)
+        where W : IWorker<O, I>, new()
+        where O : class
+        where I : class
+        {
+            url = Instance.urlParam;
+            TokenPrefix = Instance.tokenPrefix;
+            string requestUrl = $"{url}/{ endpoint}";
+
+            string json = null;
+            byte[] jsonToSend = new byte[1];
+
+            uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbPUT);
+            if (typeof(I) == typeof(Texture2D))
+            {
+                Texture2D sendTexture = param as Texture2D;
+                jsonToSend = ImageConversion.EncodeToPNG(sendTexture);
+                uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+                uwr.SetRequestHeader("Content-Type", "image/png");
+            }
+            else
+            {
+                if (param != null)
+                {
+                    if (serializer == null)
+                        json = JsonUtility.ToJson(param);
+                    else json = serializer(param);
+                    jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+
+                }
+                uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+                uwr.uploadHandler.contentType = "application/json";
+            }
+            uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+
+            if (!string.IsNullOrEmpty(token))
+                uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
+
+
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")}");
+
+            if (workerDefault == null)
+            {
+                worker = new W();
+            }
+            else
+            {
+                worker = workerDefault;
+            }
+            worker.Request = param;
         }
 
 
+        static void UpdateMocks()
+        {
+            switch (MocksResource)
+            {
+                case MocksResource.MEMORY:
+                    mocks = new Dictionary<string, string>();
+                    break;
+                case MocksResource.FILE:
+
+                    if (File.Exists(Instance.mocksFilePath))
+                    {
+                        ListKeyValueMocks mocksList = JsonUtility.FromJson<ListKeyValueMocks>(File.ReadAllText(Instance.mocksFilePath));
+                        mocks = mocksList.mocks.ToDictionary((pair) => pair.Key, (pair) => pair.Value);
+                        foreach (var p in mocks)
+                        {
+                            if (!p.Value.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                            {
+                                mocks[p.Key] = File.ReadAllText(p.Value);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ToolsDebug.Log($"Can't read mock data file from: {Instance.mocksFilePath}");
+                        MocksResource = MocksResource.NONE;
+                    }
+                    break;
+                case MocksResource.REMOTE_FILE:
+                    UnityWebRequest unityWebRequest = new UnityWebRequest(Instance.mocksFilePath, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
+                    unityWebRequest.SendWebRequest().completed += (dh) =>
+                      {
+                          if (!unityWebRequest.isNetworkError && !unityWebRequest.isHttpError && !string.IsNullOrEmpty(unityWebRequest.downloadHandler?.text))
+                          {
+                              ListKeyValueMocks mocksList = JsonUtility.FromJson<ListKeyValueMocks>(unityWebRequest.downloadHandler?.text);
+                              mocks = mocksList.mocks.ToDictionary((pair) => pair.Key, (pair) => pair.Value);
+                              foreach (var p in mocks)
+                              {
+                                  if (p.Value.EndsWith("json", StringComparison.OrdinalIgnoreCase))
+                                  {
+
+                                      UnityWebRequest uwr = new UnityWebRequest(p.Value, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
+                                      uwr.SendWebRequest().completed += (dhh) =>
+                                       {
+                                           if (!uwr.isNetworkError && !uwr.isHttpError && !string.IsNullOrEmpty(uwr.downloadHandler?.text))
+                                           {
+                                               Debug.Log($"WTF {uwr.downloadHandler?.text}");
+                                               mocks[p.Key] = uwr.downloadHandler?.text;
+                                           }
+                                       };
+                                  }
+                              }
+                          }
+                          else
+                          {
+                              ToolsDebug.Log($"Can't read mock data remote file from: {Instance.mocksFilePath}");
+                              MocksResource = MocksResource.NONE;
+                          }
+                      };
+                    break;
+                default:
+                    mocks = null;
+                    break;
+            }
+        }
+
         #endregion Global Methods
+
+
+
 
 
 
@@ -262,7 +403,44 @@ namespace RanterTools.Networking
         [Tooltip("Base URL")]
         [SerializeField]
         string urlParam = "http://localhost/";
+        [SerializeField]
+        string tokenPrefix = "JWT";
+        [SerializeField]
+        MocksResource mocksResourceParam;
+        [SerializeField]
+        [Tooltip("Used for file mock or remote file mock.")]
+        string mocksFilePath;
         #endregion Parameters
+
+        #region Unity
+        /// <summary>
+        /// Awake is called when the script instance is being loaded.
+        /// </summary>
+        void Awake()
+        {
+            MocksResource = mocksResourceParam;
+        }
+        #endregion Unity
+    }
+
+    public enum MocksResource { MEMORY, FILE, REMOTE_FILE, NONE }
+
+    [Serializable]
+    public class LocalToken
+    {
+        public string Token;
+        public DateTime ReceivedDate;
+    }
+    [Serializable]
+    public class ListKeyValueMocks
+    {
+        public List<KeyValuePair> mocks;
+    }
+    [Serializable]
+    public class KeyValuePair
+    {
+        public string Key;
+        public string Value;
     }
 
 }

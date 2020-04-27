@@ -1,6 +1,10 @@
-﻿public interface IWorker<T, W>
+﻿
+
+public interface IWorker<O, I>
 {
-    W Request { get; set; }
-    void Execute(T result);
-    void ErrorProcessing(string error);
+    I Request { get; set; }
+    void Execute(O result);
+    void ErrorProcessing(long code, string error);
+
+    void Progress(float progress);
 }

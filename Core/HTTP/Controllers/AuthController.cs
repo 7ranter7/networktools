@@ -29,7 +29,7 @@ namespace RanterTools.Networking
         public static void SignIn(string login, string password)
         {
             var param = new AuthDto { email = login, password = password };
-            HTTPController.JSONPost<AuthWorker, TokenDto, AuthDto>("auth", "api-token-auth", param);
+            HTTPController.JSONPost<TokenDto, AuthDto, AuthWorker>("auth/login", param);
         }
         /// <summary>
         /// Sample of sign up method.
@@ -39,7 +39,7 @@ namespace RanterTools.Networking
         public static void SignUp(string login, string password)
         {
             var param = new AuthDto { email = login, password = password };
-            HTTPController.JSONPost<RegistrationWorker, RegistrationDto, AuthDto>("auth", "register", param);
+            HTTPController.JSONPost<RegistrationDto, AuthDto, RegistrationWorker>("auth/register", param);
         }
         /// <summary>
         /// Sample of sign out method.

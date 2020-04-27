@@ -12,9 +12,14 @@ public class AuthWorker : IWorker<TokenDto, AuthDto>
         Debug.Log("Token: " + tokenDto.Token);
     }
 
-    public void ErrorProcessing(string error)
+    public void ErrorProcessing(long code, string error)
     {
         Debug.Log(error);
+    }
+
+    public void Progress(float progress)
+    {
+
     }
 }
 
@@ -26,9 +31,14 @@ public class RegistrationWorker : IWorker<RegistrationDto, AuthDto>
         Debug.Log("Token: " + registrationDto.email);
     }
 
-    public void ErrorProcessing(string error)
+    public void ErrorProcessing(long code, string error)
     {
         Debug.Log(error);
+    }
+
+    public void Progress(float progress)
+    {
+
     }
 }
 
