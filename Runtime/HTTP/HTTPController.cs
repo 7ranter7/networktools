@@ -191,6 +191,7 @@ namespace RanterTools.Networking
             if (typeof(I) == typeof(Texture2D))
             {
                 Texture2D sendTexture = param as Texture2D;
+                json = "Texture2D";
                 jsonToSend = ImageConversion.EncodeToPNG(sendTexture);
                 uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
                 uwr.SetRequestHeader("Content-Type", "image/png");
@@ -214,7 +215,7 @@ namespace RanterTools.Networking
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
 
 
-            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")}");
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json}");
 
             if (workerDefault == null)
             {
@@ -291,6 +292,7 @@ namespace RanterTools.Networking
             if (typeof(I) == typeof(Texture2D))
             {
                 Texture2D sendTexture = param as Texture2D;
+                json = "Texture2D";
                 jsonToSend = ImageConversion.EncodeToPNG(sendTexture);
                 uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
                 uwr.SetRequestHeader("Content-Type", "image/png");
@@ -314,7 +316,7 @@ namespace RanterTools.Networking
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
 
 
-            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")}");
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json}");
 
             if (workerDefault == null)
             {
