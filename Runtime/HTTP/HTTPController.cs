@@ -439,7 +439,8 @@ namespace RanterTools.Networking
             switch (MocksResource)
             {
                 case MocksResource.MEMORY:
-                    mocks = new Dictionary<string, string>();
+                    if (mocks == null)
+                        mocks = new Dictionary<string, string>();
                     break;
                 case MocksResource.FILE:
 
