@@ -7,6 +7,11 @@ using System.IO;
 public class AuthWorker : IWorker<TokenDto, AuthDto>
 {
     public AuthDto Request { get; set; }
+
+    public void Start()
+    {
+
+    }
     public void Execute(TokenDto tokenDto)
     {
         Debug.Log("Token: " + tokenDto.Token);
@@ -26,6 +31,11 @@ public class AuthWorker : IWorker<TokenDto, AuthDto>
 public class RegistrationWorker : IWorker<RegistrationDto, AuthDto>
 {
     public AuthDto Request { get; set; }
+
+    public void Start()
+    {
+
+    }
     public void Execute(RegistrationDto registrationDto)
     {
         Debug.Log("Token: " + registrationDto.email);

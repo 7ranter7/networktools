@@ -111,6 +111,7 @@ namespace RanterTools.Networking
                 worker = workerDefault;
             }
             worker.Request = query;
+            worker.Start();
         }
 
         static void GetResponseWorker<O, I>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
@@ -226,6 +227,7 @@ namespace RanterTools.Networking
                 worker = workerDefault;
             }
             worker.Request = param;
+            worker.Start();
         }
 
         static void PostResponseWorker<O, I, W>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
@@ -283,7 +285,7 @@ namespace RanterTools.Networking
         {
             url = Instance.urlParam;
             TokenPrefix = Instance.tokenPrefix;
-            string requestUrl = $"{url}/{ endpoint}";
+            string requestUrl = $"{url}/{endpoint}";
 
             string json = null;
             byte[] jsonToSend = new byte[1];
@@ -327,6 +329,7 @@ namespace RanterTools.Networking
                 worker = workerDefault;
             }
             worker.Request = param;
+            worker.Start();
         }
 
 
