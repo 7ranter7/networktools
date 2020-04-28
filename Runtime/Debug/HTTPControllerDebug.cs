@@ -109,7 +109,7 @@ namespace RanterTools.Networking
         /// </summary>
         void Update()
         {
-#if RANTER_TOOLS_DEBUG_NETWORKING
+#if RANTER_TOOLS_DEBUG_NETWORKING 
             timer += Time.deltaTime;
             if (timer >= 0.5f && (Input.touchCount == 3 || Input.GetKey(KeyCode.Insert)))
             {
