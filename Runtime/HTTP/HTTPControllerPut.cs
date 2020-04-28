@@ -101,8 +101,7 @@ namespace RanterTools.Networking
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer);
-            if (MocksResource == MocksResource.NONE)
+            if (!PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -123,8 +122,7 @@ namespace RanterTools.Networking
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer);
-            if (MocksResource == MocksResource.NONE)
+            if (!PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)

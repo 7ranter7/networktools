@@ -122,8 +122,7 @@ namespace RanterTools.Networking
         {
             UnityWebRequest uwr;
             IWorker<O, Dictionary<string, string>> workerTmp;
-            GetRequestInit<O, W>(endpoint, out uwr, out workerTmp, query, worker, token);
-            if (MocksResource == MocksResource.NONE)
+            if (!GetRequestInit<O, W>(endpoint, out uwr, out workerTmp, query, worker, token))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -141,8 +140,7 @@ namespace RanterTools.Networking
         {
             UnityWebRequest uwr;
             IWorker<O, Dictionary<string, string>> workerTmp;
-            GetRequestInit<O, W>(endpoint, out uwr, out workerTmp, query, worker, token);
-            if (MocksResource == MocksResource.NONE)
+            if (!GetRequestInit<O, W>(endpoint, out uwr, out workerTmp, query, worker, token))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -161,7 +159,6 @@ namespace RanterTools.Networking
             UnityWebRequest uwr;
             IWorker<Texture2D, Dictionary<string, string>> workerTmp;
             GetRequestInit<Texture2D, W>(endpoint, out uwr, out workerTmp, query, worker, token);
-
             uwr.SendWebRequest();
             while (!uwr.isDone)
             {
@@ -178,7 +175,6 @@ namespace RanterTools.Networking
             UnityWebRequest uwr;
             IWorker<Texture2D, Dictionary<string, string>> workerTmp;
             GetRequestInit<Texture2D, W>(endpoint, out uwr, out workerTmp, query, worker, token);
-
             uwr.SendWebRequest();
             while (!uwr.isDone)
             {

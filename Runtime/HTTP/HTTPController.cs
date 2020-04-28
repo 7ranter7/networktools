@@ -65,12 +65,13 @@ namespace RanterTools.Networking
 
 
         #region Global Methods
-        static void GetRequestInit<O, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, Dictionary<string, string>> worker,
+        static bool GetRequestInit<O, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, Dictionary<string, string>> worker,
                                         Dictionary<string, string> query = null, IWorker<O, Dictionary<string, string>> workerDefault = null,
                                         string token = null)
         where W : IWorker<O, Dictionary<string, string>>, new()
         where O : class
         {
+            bool useMock = false;
             url = Instance.urlParam;
             TokenPrefix = Instance.tokenPrefix;
             string requestUrl = $"{url}/{ endpoint}";
@@ -87,14 +88,47 @@ namespace RanterTools.Networking
                     uwr = UnityWebRequestTexture.GetTexture($"{requestUrl}");
                 else
                 {
-                    uwr = UnityWebRequestTexture.GetTexture($"{mocks[typeof(W).ToString()]}");
-                    ToolsDebug.Log($"Use mock for texture. Key:{typeof(W).ToString()} Value:{mocks[typeof(W).ToString()]}");
+                    var key = typeof(W).ToString();
+                    if (!mocks.ContainsKey(key))
+                    {
+                        key = endpoint;
+                    }
+                    if (mocks.ContainsKey(key))
+                    {
+                        uwr = UnityWebRequestTexture.GetTexture($"{mocks[key]}");
+                        ToolsDebug.Log($"Use mock for texture. Key:{key} Value:{mocks[key]}");
+                        useMock = true;
+                    }
+                    else
+                    {
+                        ToolsDebug.Log($"Mocks for key {key} or {key} not found. Try real request.");
+                        uwr = UnityWebRequestTexture.GetTexture($"{requestUrl}");
+                    }
+
                 }
             }
             else
             {
                 uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbGET);
                 uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+                if (MocksResource != MocksResource.NONE)
+                {
+                    var key = typeof(W).ToString();
+                    if (!mocks.ContainsKey(key))
+                    {
+                        key = endpoint;
+                    }
+                    if (mocks.ContainsKey(key))
+                    {
+                        ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]}");
+                        useMock = true;
+                    }
+                    else
+                    {
+                        ToolsDebug.Log($"Mocks for key {key} or {key} not found. Try real request.");
+                    }
+                }
+
             }
             if (!string.IsNullOrEmpty(token))
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
@@ -112,6 +146,7 @@ namespace RanterTools.Networking
             }
             worker.Request = query;
             worker.Start();
+            return useMock;
         }
 
         static void GetResponseWorker<O, I>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
@@ -149,8 +184,21 @@ namespace RanterTools.Networking
                         if (MocksResource == MocksResource.NONE) downloadedText = unityWebRequest.downloadHandler.text;
                         else
                         {
-                            downloadedText = mocks[worker.GetType().ToString()];
-                            ToolsDebug.Log($"Use mock with key: {worker.GetType().ToString()}");
+                            var key = worker.GetType().ToString();
+                            if (!mocks.ContainsKey(key))
+                            {
+                                key = unityWebRequest.url.Replace($"{url}/", "");
+                            }
+                            if (mocks.ContainsKey(key))
+                            {
+                                downloadedText = mocks[key];
+                                ToolsDebug.Log($"Use mock with key: {key}");
+                            }
+                            else
+                            {
+                                ToolsDebug.Log($"Mocks for key {unityWebRequest.url.Replace($"{url}/", "")} or {worker.GetType().ToString()} not found. Try real request.");
+                                downloadedText = unityWebRequest.downloadHandler.text;
+                            }
                         }
                         ToolsDebug.Log($"Response: {downloadedText}");
                         if (serializer == null)
@@ -174,13 +222,14 @@ namespace RanterTools.Networking
             }
         }
 
-        static void PostRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
+        static bool PostRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
                                             IWorker<O, I> workerDefault = null,
                                             string token = null, Func<I, string> serializer = null)
         where W : IWorker<O, I>, new()
         where O : class
         where I : class
         {
+            bool useMock = false;
             url = Instance.urlParam;
             TokenPrefix = Instance.tokenPrefix;
             string requestUrl = $"{url}/{endpoint}";
@@ -189,6 +238,24 @@ namespace RanterTools.Networking
             byte[] jsonToSend = new byte[1];
 
             uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbPOST);
+            if (MocksResource != MocksResource.NONE)
+            {
+                var key = typeof(W).ToString();
+                if (!mocks.ContainsKey(key))
+                {
+                    key = endpoint;
+                }
+                if (mocks.ContainsKey(key))
+                {
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]}");
+                    useMock = true;
+                }
+                else
+                {
+                    ToolsDebug.Log($"Mocks for key {key} or {key} not found. Try real request.");
+                }
+            }
+
             if (typeof(I) == typeof(Texture2D))
             {
                 Texture2D sendTexture = param as Texture2D;
@@ -228,6 +295,7 @@ namespace RanterTools.Networking
             }
             worker.Request = param;
             worker.Start();
+            return useMock;
         }
 
         static void PostResponseWorker<O, I, W>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
@@ -253,8 +321,21 @@ namespace RanterTools.Networking
                     if (MocksResource == MocksResource.NONE) downloadedText = unityWebRequest.downloadHandler.text;
                     else
                     {
-                        downloadedText = mocks[worker.GetType().ToString()];
-                        ToolsDebug.Log($"Use mock with key: {worker.GetType().ToString()}");
+                        var key = worker.GetType().ToString();
+                        if (!mocks.ContainsKey(key))
+                        {
+                            key = unityWebRequest.url.Replace($"{url}/", "");
+                        }
+                        if (mocks.ContainsKey(key))
+                        {
+                            downloadedText = mocks[key];
+                            ToolsDebug.Log($"Use mock with key: {key}");
+                        }
+                        else
+                        {
+                            ToolsDebug.Log($"Mocks for key {unityWebRequest.url.Replace($"{url}/", "")} or {worker.GetType().ToString()} not found. Try real request.");
+                            downloadedText = unityWebRequest.downloadHandler.text;
+                        }
                     }
                     ToolsDebug.Log($"Response: {downloadedText}");
                     if (serializer == null)
@@ -276,13 +357,14 @@ namespace RanterTools.Networking
             }
         }
 
-        static void PutRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
+        static bool PutRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
                                             IWorker<O, I> workerDefault = null,
                                             string token = null, Func<I, string> serializer = null)
         where W : IWorker<O, I>, new()
         where O : class
         where I : class
         {
+            bool useMock = false;
             url = Instance.urlParam;
             TokenPrefix = Instance.tokenPrefix;
             string requestUrl = $"{url}/{endpoint}";
@@ -291,6 +373,24 @@ namespace RanterTools.Networking
             byte[] jsonToSend = new byte[1];
 
             uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbPUT);
+            if (MocksResource != MocksResource.NONE)
+            {
+                var key = typeof(W).ToString();
+                if (!mocks.ContainsKey(key))
+                {
+                    key = endpoint;
+                }
+                if (mocks.ContainsKey(key))
+                {
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]}");
+                    useMock = true;
+                }
+                else
+                {
+                    ToolsDebug.Log($"Mocks for key {key} or {key} not found. Try real request.");
+                }
+            }
+
             if (typeof(I) == typeof(Texture2D))
             {
                 Texture2D sendTexture = param as Texture2D;
@@ -330,6 +430,7 @@ namespace RanterTools.Networking
             }
             worker.Request = param;
             worker.Start();
+            return useMock;
         }
 
 
@@ -416,7 +517,7 @@ namespace RanterTools.Networking
         MocksResource mocksResourceParam;
         [SerializeField]
         [Tooltip("Used for file mock or remote file mock.")]
-        string mocksFilePath;
+        public string mocksFilePath;
         #endregion Parameters
 
         #region Unity
@@ -430,7 +531,7 @@ namespace RanterTools.Networking
         #endregion Unity
     }
 
-    public enum MocksResource { MEMORY, FILE, REMOTE_FILE, NONE }
+    public enum MocksResource { MEMORY = 1, FILE = 2, REMOTE_FILE = 3, NONE = 0 }
 
     [Serializable]
     public class LocalToken
