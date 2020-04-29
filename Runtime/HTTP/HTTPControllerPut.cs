@@ -27,13 +27,12 @@ namespace RanterTools.Networking
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
         /// <returns></returns>
-        public static void JSONPutAuth<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPutAuth<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
            where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            Instance.StartCoroutine(JSONPutRequest<O, I, W>(endpoint, param, worker, Token.Token, serializer, deserializer));
+            Instance.StartCoroutine(JSONPutRequest<O, I, W>(endpoint, param, worker, Token.Token));
         }
         /// <summary>
         /// Put request with JSON data to send and receive. Coroutine.
@@ -46,13 +45,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPut<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPut<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
             where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            Instance.StartCoroutine(JSONPutRequest<O, I, W>(endpoint, param, worker, null, serializer, deserializer));
+            Instance.StartCoroutine(JSONPutRequest<O, I, W>(endpoint, param, worker, null));
         }
         /// <summary>
         /// Put request with JSON data to send and receive with session token. Async.
@@ -65,13 +63,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPutAuthAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPutAuthAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
             where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            JSONPutRequestAsync<O, I, W>(endpoint, param, worker, Token.Token, serializer, deserializer);
+            JSONPutRequestAsync<O, I, W>(endpoint, param, worker, Token.Token);
         }
         /// <summary>
         /// Put request with JSON data to send and receive.
@@ -84,24 +81,22 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPutAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPutAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
              where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            JSONPutRequestAsync<O, I, W>(endpoint, param, worker, null, serializer, deserializer);
+            JSONPutRequestAsync<O, I, W>(endpoint, param, worker, null);
         }
 
-        static IEnumerator JSONPutRequest<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null,
-                                                Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        static IEnumerator JSONPutRequest<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null)
         where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            if (!PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer))
+            if (!PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -111,18 +106,17 @@ namespace RanterTools.Networking
                 }
             }
             workerTmp.Progress((uwr.downloadProgress));
-            PostResponseWorker<O, I, W>(uwr, workerTmp, deserializer);
+            PostResponseWorker<O, I, W>(uwr, workerTmp);
         }
 
-        static async void JSONPutRequestAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null,
-                                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        static async void JSONPutRequestAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null)
          where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            if (!PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer))
+            if (!PutRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -132,7 +126,7 @@ namespace RanterTools.Networking
                 }
             }
             workerTmp.Progress((uwr.downloadProgress));
-            PostResponseWorker<O, I, W>(uwr, workerTmp, deserializer);
+            PostResponseWorker<O, I, W>(uwr, workerTmp);
         }
 
         #endregion Global Methods

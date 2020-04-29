@@ -26,13 +26,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPostAuth<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                                Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPostAuth<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
            where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, Token.Token, serializer, deserializer));
+            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, Token.Token));
         }
         /// <summary>
         /// Post request with JSON data to send and receive. Coroutine.
@@ -45,13 +44,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPost<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                            Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPost<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
             where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, null, serializer, deserializer));
+            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, null));
         }
         /// <summary>
         /// Post request with JSON data to send and receive with session token. Async.
@@ -64,13 +62,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPostAuthAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPostAuthAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
             where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, Token.Token, serializer, deserializer);
+            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, Token.Token);
         }
         /// <summary>
         /// Post request with JSON data to send and receive. Async.
@@ -83,24 +80,22 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPostAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null,
-                                    Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        public static void JSONPostAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
              where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, null, serializer, deserializer);
+            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, null);
         }
 
-        static IEnumerator JSONPostRequest<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null,
-                                                     Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        static IEnumerator JSONPostRequest<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null)
         where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            if (!PostRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer))
+            if (!PostRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -110,18 +105,17 @@ namespace RanterTools.Networking
                 }
             }
             workerTmp.Progress((uwr.downloadProgress));
-            PostResponseWorker<O, I, W>(uwr, workerTmp, deserializer);
+            PostResponseWorker<O, I, W>(uwr, workerTmp);
         }
 
-        static async void JSONPostRequestAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null,
-                                                         Func<I, string> serializer = null, Func<string, O> deserializer = null)
+        static async void JSONPostRequestAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null)
          where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            if (!PostRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, serializer))
+            if (!PostRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -131,7 +125,7 @@ namespace RanterTools.Networking
                 }
             }
             workerTmp.Progress((uwr.downloadProgress));
-            PostResponseWorker<O, I, W>(uwr, workerTmp, deserializer);
+            PostResponseWorker<O, I, W>(uwr, workerTmp);
         }
 
         #endregion Global Methods

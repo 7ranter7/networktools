@@ -10,23 +10,33 @@ namespace RanterTools.Networking.Examples
     {
         public AuthDto Request { get; set; }
 
-        public void Start()
+        public virtual void Start()
         {
 
         }
-        public void Execute(TokenDto tokenDto)
+        public virtual void Execute(TokenDto tokenDto)
         {
             Debug.Log("Token: " + tokenDto.Token);
         }
 
-        public void ErrorProcessing(long code, string error)
+        public virtual void ErrorProcessing(long code, string error)
         {
             Debug.Log(error);
         }
 
-        public void Progress(float progress)
+        public virtual void Progress(float progress)
         {
 
+        }
+
+        public virtual string Serialize(AuthDto obj)
+        {
+            return JsonUtility.ToJson(obj);
+        }
+
+        public virtual TokenDto Deserialize(string obj)
+        {
+            return JsonUtility.FromJson<TokenDto>(obj);
         }
     }
 
@@ -34,23 +44,33 @@ namespace RanterTools.Networking.Examples
     {
         public AuthDto Request { get; set; }
 
-        public void Start()
+        public virtual void Start()
         {
 
         }
-        public void Execute(RegistrationDto registrationDto)
+        public virtual void Execute(RegistrationDto registrationDto)
         {
             Debug.Log("Token: " + registrationDto.email);
         }
 
-        public void ErrorProcessing(long code, string error)
+        public virtual void ErrorProcessing(long code, string error)
         {
             Debug.Log(error);
         }
 
-        public void Progress(float progress)
+        public virtual void Progress(float progress)
         {
 
+        }
+
+        public virtual string Serialize(AuthDto obj)
+        {
+            return JsonUtility.ToJson(obj);
+        }
+
+        public virtual RegistrationDto Deserialize(string obj)
+        {
+            return JsonUtility.FromJson<RegistrationDto>(obj);
         }
     }
 

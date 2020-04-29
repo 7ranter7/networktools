@@ -148,7 +148,7 @@ namespace RanterTools.Networking
             return useMock;
         }
 
-        static void GetResponseWorker<O, I>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
+        static void GetResponseWorker<O, I>(UnityWebRequest unityWebRequest, IWorker<O, I> worker)
         where O : class
         where I : class
         {
@@ -200,9 +200,8 @@ namespace RanterTools.Networking
                             }
                         }
                         ToolsDebug.Log($"Response: {downloadedText}");
-                        if (serializer == null)
-                            response = JsonUtility.FromJson<O>(downloadedText);
-                        else response = serializer(downloadedText);
+
+                        response = worker.Deserialize(downloadedText);
                     }
 
                     if (response != null)
@@ -223,7 +222,7 @@ namespace RanterTools.Networking
 
         static bool PostRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
                                             IWorker<O, I> workerDefault = null,
-                                            string token = null, Func<I, string> serializer = null)
+                                            string token = null)
         where W : IWorker<O, I>, new()
         where O : class
         where I : class
@@ -236,6 +235,15 @@ namespace RanterTools.Networking
             string json = null;
             byte[] jsonToSend = new byte[1];
 
+
+            if (workerDefault == null)
+            {
+                worker = new W();
+            }
+            else
+            {
+                worker = workerDefault;
+            }
             uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbPOST);
             if (MocksResource != MocksResource.NONE)
             {
@@ -267,11 +275,8 @@ namespace RanterTools.Networking
             {
                 if (param != null)
                 {
-                    if (serializer == null)
-                        json = JsonUtility.ToJson(param);
-                    else json = serializer(param);
+                    json = worker.Serialize(param);
                     jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
-
                 }
                 uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
                 uwr.uploadHandler.contentType = "application/json";
@@ -284,20 +289,13 @@ namespace RanterTools.Networking
 
             ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json}");
 
-            if (workerDefault == null)
-            {
-                worker = new W();
-            }
-            else
-            {
-                worker = workerDefault;
-            }
+
             worker.Request = param;
             worker.Start();
             return useMock;
         }
 
-        static void PostResponseWorker<O, I, W>(UnityWebRequest unityWebRequest, IWorker<O, I> worker, Func<string, O> serializer = null)
+        static void PostResponseWorker<O, I, W>(UnityWebRequest unityWebRequest, IWorker<O, I> worker)
         where O : class
         {
             if (unityWebRequest.isNetworkError || !string.IsNullOrEmpty(unityWebRequest.error))
@@ -337,9 +335,7 @@ namespace RanterTools.Networking
                         }
                     }
                     ToolsDebug.Log($"Response: {downloadedText}");
-                    if (serializer == null)
-                        response = JsonUtility.FromJson<O>(downloadedText);
-                    else response = serializer(downloadedText);
+                    response = worker.Deserialize(downloadedText);
                     if (response != null)
                     {
                         worker.Execute(response);
@@ -358,7 +354,7 @@ namespace RanterTools.Networking
 
         static bool PutRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
                                             IWorker<O, I> workerDefault = null,
-                                            string token = null, Func<I, string> serializer = null)
+                                            string token = null)
         where W : IWorker<O, I>, new()
         where O : class
         where I : class
@@ -370,7 +366,14 @@ namespace RanterTools.Networking
 
             string json = null;
             byte[] jsonToSend = new byte[1];
-
+            if (workerDefault == null)
+            {
+                worker = new W();
+            }
+            else
+            {
+                worker = workerDefault;
+            }
             uwr = new UnityWebRequest($"{requestUrl}", UnityWebRequest.kHttpVerbPUT);
             if (MocksResource != MocksResource.NONE)
             {
@@ -402,9 +405,7 @@ namespace RanterTools.Networking
             {
                 if (param != null)
                 {
-                    if (serializer == null)
-                        json = JsonUtility.ToJson(param);
-                    else json = serializer(param);
+                    json = worker.Serialize(param);
                     jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
 
                 }
@@ -419,14 +420,7 @@ namespace RanterTools.Networking
 
             ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json}");
 
-            if (workerDefault == null)
-            {
-                worker = new W();
-            }
-            else
-            {
-                worker = workerDefault;
-            }
+
             worker.Request = param;
             worker.Start();
             return useMock;

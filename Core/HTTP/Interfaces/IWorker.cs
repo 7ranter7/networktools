@@ -7,4 +7,6 @@ public interface IWorker<O, I>
     void Execute(O result);
     void ErrorProcessing(long code, string error);
     void Progress(float progress);
+    string Serialize(I obj);
+    O Deserialize(string obj);
 }
