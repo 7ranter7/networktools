@@ -11,7 +11,6 @@ using RanterTools.Base;
 
 namespace RanterTools.Networking
 {
-
     /// <summary>
     /// HTTP controller for async requests.
     /// </summary>

@@ -3,16 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-[Serializable]
-public class AuthDto
+namespace RanterTools.Networking.Examples
 {
-    public string email;
-    public string password;
-}
+    [Serializable]
+    public class AuthDto
+    {
+        public string email;
+        public string password;
+    }
 
-[Serializable]
-public class RegistrationDto
-{
-    public string email;
+    [Serializable]
+    public class RegistrationDto
+    {
+        public string email;
+    }
 }

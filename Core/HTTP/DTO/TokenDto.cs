@@ -3,8 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class TokenDto
+namespace RanterTools.Networking.Examples
 {
-    public string Token;
+    [Serializable]
+    public class TokenDto
+    {
+        public string Token;
+    }
+
 }

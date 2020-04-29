@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace RanterTools.Networking
+namespace RanterTools.Networking.Examples
 {
 
 
