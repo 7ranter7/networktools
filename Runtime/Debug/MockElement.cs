@@ -24,7 +24,9 @@ namespace RanterTools.Networking
         #region Methods
         public void SetData(string key, string value)
         {
-            text.text = value;
+            if (value.Length > 2048)
+                text.text = value.Substring(0, 2040);
+            else text.text = value;
             mockKey = key;
         }
         public void Delete()

@@ -436,16 +436,68 @@ namespace RanterTools.Networking
                         mocks = new Dictionary<string, string>();
                     break;
                 case MocksResource.FILE:
-
-                    if (File.Exists(Instance.mocksFilePath))
+                    string filePath = Instance.mocksFilePath;
+                    if (!File.Exists(filePath))
                     {
-                        ListKeyValueMocks mocksList = JsonUtility.FromJson<ListKeyValueMocks>(File.ReadAllText(Instance.mocksFilePath));
-                        mocks = mocksList.mocks.ToDictionary((pair) => pair.Key, (pair) => pair.Value);
-                        foreach (var p in mocks)
+                        filePath = Path.Combine(Application.persistentDataPath, Instance.mocksFilePath);
+                        if (!File.Exists(filePath))
+                        {
+                            filePath = Path.Combine(Application.streamingAssetsPath, Instance.mocksFilePath);
+                            if (!File.Exists(filePath))
+                            {
+                                UnityWebRequest copyFile = new UnityWebRequest(filePath, "GET");
+                                copyFile.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+                                copyFile.SendWebRequest();
+                                while (!copyFile.isDone) { }
+                                if (!copyFile.isHttpError && !copyFile.isNetworkError)
+                                {
+                                    if (!string.IsNullOrEmpty(copyFile.downloadHandler.text))
+                                    {
+                                        Debug.Log("4");
+                                        File.WriteAllText(Path.Combine(Application.persistentDataPath, Instance.mocksFilePath), copyFile.downloadHandler.text);
+                                        filePath = Path.Combine(Application.persistentDataPath, Instance.mocksFilePath);
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
+
+                    if (File.Exists(filePath))
+                    {
+                        ListKeyValueMocks mocksList = JsonUtility.FromJson<ListKeyValueMocks>(File.ReadAllText(filePath));
+                        if (mocks == null) mocks = new Dictionary<string, string>();
+                        //mocks = ;
+                        foreach (var p in mocksList.mocks.ToDictionary((pair) => pair.Key, (pair) => pair.Value))
                         {
                             if (!p.Value.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                             {
-                                mocks[p.Key] = File.ReadAllText(p.Value);
+                                string filePathRequest = p.Value;
+
+                                if (!File.Exists(filePathRequest))
+                                {
+                                    filePathRequest = Path.Combine(Application.persistentDataPath, p.Value);
+                                    if (!File.Exists(filePathRequest))
+                                    {
+                                        filePathRequest = Path.Combine(Application.streamingAssetsPath, p.Value);
+                                        if (!File.Exists(filePathRequest))
+                                        {
+                                            UnityWebRequest copyFile = new UnityWebRequest(filePathRequest, "GET");
+                                            copyFile.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+                                            copyFile.SendWebRequest();
+                                            while (!copyFile.isDone) { }
+                                            if (!copyFile.isHttpError && !copyFile.isNetworkError)
+                                            {
+                                                File.WriteAllText(Path.Combine(Application.persistentDataPath, p.Value), copyFile.downloadHandler.text);
+                                                filePathRequest = Path.Combine(Application.persistentDataPath, p.Value);
+                                            }
+                                        }
+                                    }
+                                }
+                                //mocks[p.Key] = filePathRequest;
+                                //p.=filePathRequest;
+                                mocks[p.Key] = File.ReadAllText(filePathRequest);
                             }
                         }
                     }
