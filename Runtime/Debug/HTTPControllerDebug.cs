@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using RanterTools.UI.Debug;
 namespace RanterTools.Networking
 {
 
 
-    public class HTTPControllerDebug : MonoBehaviour
+    public class HTTPControllerDebug : DebugTab
     {
         #region Parameters
-        [SerializeField]
-        GameObject debugScreen;
+        [Header("HTTP")]
         [SerializeField]
         MockElement mockElementPrefab;
         [SerializeField]
@@ -41,7 +41,13 @@ namespace RanterTools.Networking
             DestroyImmediate(element.gameObject);
         }
 
-        void Init()
+        public override void Init(Transform tab, Transform frame)
+        {
+            base.Init(tab, frame);
+            InitMocks();
+        }
+
+        void InitMocks()
         {
             Clear();
             mocksResource.SetValueWithoutNotify((int)HTTPController.MocksResource);
@@ -72,7 +78,7 @@ namespace RanterTools.Networking
         {
             HTTPController.Instance.mocksFilePath = filePath.text;
             HTTPController.MocksResource = (MocksResource)mockValue;
-            Init();
+            InitMocks();
         }
 
         void AddMock()
@@ -80,12 +86,31 @@ namespace RanterTools.Networking
             if (HTTPController.MocksResource == MocksResource.MEMORY)
             {
                 HTTPController.mocks[keyField.text] = valueField.text;
-                Init();
+                InitMocks();
             }
         }
         #endregion Methods
 
         #region Unity
+        /// <summary>
+        /// Awake is called when the script instance is being loaded.
+        /// </summary>
+        protected override void Awake()
+        {
+            base.Awake();
+            if (keyField == null)
+                keyField = GameObject.Find("ResponseKey").GetComponent<TMP_InputField>();
+            if (valueField == null)
+                valueField = GameObject.Find("ResponseValue").GetComponent<TMP_InputField>();
+            if (add == null)
+                add = GameObject.Find("AddResponse").GetComponent<Button>();
+            if (mocksResource == null)
+                mocksResource = GameObject.Find("MockType").GetComponent<TMP_Dropdown>();
+            if (filePath == null)
+                filePath = GameObject.Find("MocksFilePath").GetComponent<TMP_InputField>();
+            if (responses == null)
+                responses = GameObject.Find("Responses").GetComponent<RectTransform>();
+        }
         /// <summary>
         /// This function is called when the object becomes enabled and active.
         /// </summary>
@@ -93,7 +118,6 @@ namespace RanterTools.Networking
         {
             mocksResource.onValueChanged.AddListener(ChangeValue);
             add.onClick.AddListener(AddMock);
-
         }
 
         /// <summary>
@@ -102,22 +126,6 @@ namespace RanterTools.Networking
         void OnDisable()
         {
 
-        }
-
-        /// <summary>
-        /// Update is called every frame, if the MonoBehaviour is enabled.
-        /// </summary>
-        void Update()
-        {
-#if RANTER_TOOLS_DEBUG_NETWORKING 
-            timer += Time.deltaTime;
-            if (timer >= 0.5f && (Input.touchCount == 3 || Input.GetKey(KeyCode.Insert)))
-            {
-                debugScreen.SetActive(!debugScreen.activeSelf);
-                if (debugScreen.gameObject.activeSelf) Init();
-                timer = 0;
-            }
-#endif 
         }
         #endregion Unity
     }
