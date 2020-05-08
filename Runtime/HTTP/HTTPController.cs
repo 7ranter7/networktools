@@ -95,7 +95,7 @@ namespace RanterTools.Networking
                     if (mocks.ContainsKey(key))
                     {
                         uwr = UnityWebRequestTexture.GetTexture($"{mocks[key]}");
-                        ToolsDebug.Log($"Use mock for texture. Key:{key} Value:{mocks[key]}");
+                        ToolsDebug.Log($"Use mock for texture. Key:{key} Value:{mocks[key].Substring(0, 256)}");
                         useMock = true;
                     }
                     else
@@ -119,7 +119,7 @@ namespace RanterTools.Networking
                     }
                     if (mocks.ContainsKey(key))
                     {
-                        ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]}");
+                        ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key].Substring(0, 256)}");
                         useMock = true;
                     }
                     else
@@ -199,7 +199,7 @@ namespace RanterTools.Networking
                                 downloadedText = unityWebRequest.downloadHandler.text;
                             }
                         }
-                        ToolsDebug.Log($"Response: {downloadedText}");
+                        ToolsDebug.Log($"Response: {downloadedText.Substring(0, 256)}");
 
                         response = worker.Deserialize(downloadedText);
                     }
@@ -254,7 +254,7 @@ namespace RanterTools.Networking
                 }
                 if (mocks.ContainsKey(key))
                 {
-                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]}");
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key].Substring(0, 256)}");
                     useMock = true;
                 }
                 else
@@ -287,7 +287,7 @@ namespace RanterTools.Networking
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
 
 
-            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json}");
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json.Substring(0, 256)}");
 
 
             worker.Request = param;
@@ -334,7 +334,7 @@ namespace RanterTools.Networking
                             downloadedText = unityWebRequest.downloadHandler.text;
                         }
                     }
-                    ToolsDebug.Log($"Response: {downloadedText}");
+                    ToolsDebug.Log($"Response: {downloadedText.Substring(0, 256)}");
                     response = worker.Deserialize(downloadedText);
                     if (response != null)
                     {
@@ -384,7 +384,7 @@ namespace RanterTools.Networking
                 }
                 if (mocks.ContainsKey(key))
                 {
-                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]}");
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key].Substring(0, 256)}");
                     useMock = true;
                 }
                 else
@@ -418,7 +418,7 @@ namespace RanterTools.Networking
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
 
 
-            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json}");
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json.Substring(0, 256)}");
 
 
             worker.Request = param;
@@ -453,7 +453,6 @@ namespace RanterTools.Networking
                                 {
                                     if (!string.IsNullOrEmpty(copyFile.downloadHandler.text))
                                     {
-                                        Debug.Log("4");
                                         File.WriteAllText(Path.Combine(Application.persistentDataPath, Instance.mocksFilePath), copyFile.downloadHandler.text);
                                         filePath = Path.Combine(Application.persistentDataPath, Instance.mocksFilePath);
                                     }
@@ -468,7 +467,6 @@ namespace RanterTools.Networking
                     {
                         ListKeyValueMocks mocksList = JsonUtility.FromJson<ListKeyValueMocks>(File.ReadAllText(filePath));
                         if (mocks == null) mocks = new Dictionary<string, string>();
-                        //mocks = ;
                         foreach (var p in mocksList.mocks.ToDictionary((pair) => pair.Key, (pair) => pair.Value))
                         {
                             if (!p.Value.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -495,8 +493,6 @@ namespace RanterTools.Networking
                                         }
                                     }
                                 }
-                                //mocks[p.Key] = filePathRequest;
-                                //p.=filePathRequest;
                                 mocks[p.Key] = File.ReadAllText(filePathRequest);
                             }
                         }
@@ -519,13 +515,11 @@ namespace RanterTools.Networking
                               {
                                   if (p.Value.EndsWith("json", StringComparison.OrdinalIgnoreCase))
                                   {
-
                                       UnityWebRequest uwr = new UnityWebRequest(p.Value, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
                                       uwr.SendWebRequest().completed += (dhh) =>
                                        {
                                            if (!uwr.isNetworkError && !uwr.isHttpError && !string.IsNullOrEmpty(uwr.downloadHandler?.text))
                                            {
-                                               Debug.Log($"WTF {uwr.downloadHandler?.text}");
                                                mocks[p.Key] = uwr.downloadHandler?.text;
                                            }
                                        };
