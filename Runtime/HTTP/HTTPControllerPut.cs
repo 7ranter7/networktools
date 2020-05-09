@@ -162,7 +162,7 @@ namespace RanterTools.Networking
                 var key = typeof(W).ToString();
                 if (!mocks.ContainsKey(key))
                 {
-                    key = endpoint;
+                    key = $"PUT:{endpoint}";
                 }
                 if (mocks.ContainsKey(key))
                 {

@@ -216,7 +216,7 @@ namespace RanterTools.Networking
                     var key = typeof(W).ToString();
                     if (!mocks.ContainsKey(key))
                     {
-                        key = endpoint;
+                        key = $"GET:{endpoint}";
                     }
                     if (mocks.ContainsKey(key))
                     {
@@ -241,7 +241,7 @@ namespace RanterTools.Networking
                     var key = typeof(W).ToString();
                     if (!mocks.ContainsKey(key))
                     {
-                        key = endpoint;
+                        key = $"GET:{endpoint}";
                     }
                     if (mocks.ContainsKey(key))
                     {
@@ -312,7 +312,7 @@ namespace RanterTools.Networking
                             var key = worker.GetType().ToString();
                             if (!mocks.ContainsKey(key))
                             {
-                                key = unityWebRequest.url.Replace($"{url}/", "");
+                                key = $"GET:{unityWebRequest.url.Replace($"{url}/", "")}";
                             }
                             if (mocks.ContainsKey(key))
                             {
