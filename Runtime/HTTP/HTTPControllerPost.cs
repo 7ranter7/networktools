@@ -144,6 +144,7 @@ namespace RanterTools.Networking
             url = Instance.urlParam;
             TokenPrefix = Instance.tokenPrefix;
             string requestUrl = $"{url}/{endpoint}";
+            if (endpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)) requestUrl = endpoint;
 
             string json = null;
             byte[] jsonToSend = new byte[1];
