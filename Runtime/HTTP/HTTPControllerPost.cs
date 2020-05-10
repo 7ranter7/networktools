@@ -252,7 +252,7 @@ namespace RanterTools.Networking
                     }
                     ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, 256))}");
                     response = worker.Deserialize(downloadedText);
-                    if (response != null)
+                    if (response != null || typeof(O) == typeof(string))
                     {
                         worker.Execute(response);
                     }
