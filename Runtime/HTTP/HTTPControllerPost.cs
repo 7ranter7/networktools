@@ -168,7 +168,7 @@ namespace RanterTools.Networking
                 }
                 if (mocks.ContainsKey(key))
                 {
-                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, 256))}");
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, Instance.logLimit))}");
                     useMock = true;
                 }
                 else
@@ -201,7 +201,7 @@ namespace RanterTools.Networking
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
 
 
-            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json?.Substring(0, Mathf.Min(json.Length, 256))}");
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPOST}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json?.Substring(0, Mathf.Min(json.Length, Instance.logLimit))}");
 
 
             worker.Request = param;
@@ -251,7 +251,7 @@ namespace RanterTools.Networking
                             downloadedText = unityWebRequest.downloadHandler.text;
                         }
                     }
-                    ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, 256))}");
+                    ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, Instance.logLimit))}");
                     response = worker.Deserialize(downloadedText);
                     if (response != null || typeof(O) == typeof(string))
                     {

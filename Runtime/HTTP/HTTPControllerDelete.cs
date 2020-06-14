@@ -145,7 +145,7 @@ namespace RanterTools.Networking
                 }
                 if (mocks.ContainsKey(key))
                 {
-                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, 256))}");
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, Instance.logLimit))}");
                     useMock = true;
                 }
                 else
@@ -215,7 +215,7 @@ namespace RanterTools.Networking
                             downloadedText = unityWebRequest.downloadHandler.text;
                         }
                     }
-                    ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, 256))}");
+                    ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, Instance.logLimit))}");
 
                     response = worker.Deserialize(downloadedText);
 
