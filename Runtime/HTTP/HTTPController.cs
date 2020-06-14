@@ -198,6 +198,9 @@ namespace RanterTools.Networking
         [SerializeField]
         [Tooltip("Used for file mock or remote file mock.")]
         public string mocksFilePath;
+
+        [SerializeField]
+        int logLimit = 128;
         #endregion Parameters
 
         #region Unity

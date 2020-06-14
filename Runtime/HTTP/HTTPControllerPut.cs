@@ -136,7 +136,7 @@ namespace RanterTools.Networking
 
         static bool PutRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
                                             IWorker<O, I> workerDefault = null,
-                                            string token = null)
+                                            string token = null, params IMultipartFormSection[] parts)
         where W : IWorker<O, I>, new()
         where O : class
         where I : class
@@ -166,7 +166,7 @@ namespace RanterTools.Networking
                 }
                 if (mocks.ContainsKey(key))
                 {
-                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, 256))}");
+                    ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, Instance.logLimit))}");
                     useMock = true;
                 }
                 else
@@ -191,8 +191,20 @@ namespace RanterTools.Networking
                     jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
 
                 }
-                uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
-                uwr.uploadHandler.contentType = "application/json";
+                if (parts != null && parts.Length != 0)
+                {
+                    //TODO:
+                    //Finish it
+                    List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
+                    formData.Add(new MultipartFormDataSection("JSON Body", json, "application/json"));
+                    formData.AddRange(parts);
+                    //uwr.up
+                }
+                else
+                {
+                    uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+                    uwr.uploadHandler.contentType = "application/json";
+                }
             }
             uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
 
@@ -200,7 +212,7 @@ namespace RanterTools.Networking
                 uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
 
 
-            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json?.Substring(0, Mathf.Min(json.Length, 256))}");
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbPUT}: {requestUrl} {uwr.GetRequestHeader("Authorization")} JSONBody:{json?.Substring(0, Mathf.Min(json.Length, Instance.logLimit))}");
 
 
             worker.Request = param;
