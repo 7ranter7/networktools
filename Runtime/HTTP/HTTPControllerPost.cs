@@ -144,6 +144,7 @@ namespace RanterTools.Networking
             url = Instance.urlParam;
             TokenPrefix = Instance.tokenPrefix;
             string requestUrl = $"{url}/{endpoint}";
+            if (endpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)) requestUrl = endpoint;
 
             string json = null;
             byte[] jsonToSend = new byte[1];
@@ -252,7 +253,7 @@ namespace RanterTools.Networking
                     }
                     ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, Instance.logLimit))}");
                     response = worker.Deserialize(downloadedText);
-                    if (response != null)
+                    if (response != null || typeof(O) == typeof(string))
                     {
                         worker.Execute(response);
                     }
