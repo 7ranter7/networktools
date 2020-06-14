@@ -65,7 +65,67 @@ namespace RanterTools.Networking
 
         #region Global Methods
 
+        public static Dictionary<string, string> ParseQueryString(string query, Encoding encoding = null)
+        {
+            Dictionary<string, string> result = null;
+            if (query.Length == 0)
+                return result;
+            result = new Dictionary<string, string>();
+            if (encoding == null) encoding = Encoding.UTF8;
+            var decodedLength = query.Length;
+            var namePos = 0;
+            var first = true;
 
+            while (namePos <= decodedLength)
+            {
+                int valuePos = -1, valueEnd = -1;
+                for (var q = namePos; q < decodedLength; q++)
+                {
+                    if ((valuePos == -1) && (query[q] == '='))
+                    {
+                        valuePos = q + 1;
+                    }
+                    else if (query[q] == '&')
+                    {
+                        valueEnd = q;
+                        break;
+                    }
+                }
+
+                if (first)
+                {
+                    first = false;
+                    if (query[namePos] == '?')
+                        namePos++;
+                }
+
+                string name;
+                if (valuePos == -1)
+                {
+                    name = null;
+                    valuePos = namePos;
+                }
+                else
+                {
+                    name = UnityWebRequest.UnEscapeURL(query.Substring(namePos, valuePos - namePos - 1));
+                }
+                if (valueEnd < 0)
+                {
+                    namePos = -1;
+                    valueEnd = query.Length;
+                }
+                else
+                {
+                    namePos = valueEnd + 1;
+                }
+                var value = UnityWebRequest.UnEscapeURL(query.Substring(valuePos, valueEnd - valuePos));
+
+                result.Add(name, value);
+                if (namePos == -1)
+                    break;
+            }
+            return result;
+        }
 
         static void UpdateMocks()
         {
