@@ -29,12 +29,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPostAuth<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
+        public static void JSONPostAuth<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, params IMultipartFormSection[] parts)
            where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, Token.Token));
+            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, Token.Token, parts));
         }
         /// <summary>
         /// Post request with JSON data to send and receive. Coroutine.
@@ -47,12 +47,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPost<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
+        public static void JSONPost<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, params IMultipartFormSection[] parts)
             where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, null));
+            Instance.StartCoroutine(JSONPostRequest<O, I, W>(endpoint, param, worker, null, parts));
         }
         /// <summary>
         /// Post request with JSON data to send and receive with session token. Async.
@@ -65,12 +65,12 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPostAuthAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
+        public static void JSONPostAuthAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, params IMultipartFormSection[] parts)
             where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, Token.Token);
+            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, Token.Token, parts);
         }
         /// <summary>
         /// Post request with JSON data to send and receive. Async.
@@ -83,15 +83,15 @@ namespace RanterTools.Networking
         /// <typeparam name="O">Output data type.</typeparam>
         /// <typeparam name="I">Input data type.</typeparam>
         /// <typeparam name="W">Worker type.</typeparam>
-        public static void JSONPostAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null)
+        public static void JSONPostAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, params IMultipartFormSection[] parts)
              where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
-            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, null);
+            JSONPostRequestAsync<O, I, W>(endpoint, param, worker, null, parts);
         }
 
-        static IEnumerator JSONPostRequest<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null)
+        static IEnumerator JSONPostRequest<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null, params IMultipartFormSection[] parts)
         where W : IWorker<O, I>, new()
         where I : class
         where O : class
@@ -111,14 +111,14 @@ namespace RanterTools.Networking
             PostResponseWorker<O, I, W>(uwr, workerTmp);
         }
 
-        static async void JSONPostRequestAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null)
+        static async void JSONPostRequestAsync<O, I, W>(string endpoint, I param, IWorker<O, I> worker = null, string token = null, params IMultipartFormSection[] parts)
          where W : IWorker<O, I>, new()
         where I : class
         where O : class
         {
             UnityWebRequest uwr;
             IWorker<O, I> workerTmp;
-            if (!PostRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token))
+            if (!PostRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, param, worker, token, parts))
             {
                 uwr.SendWebRequest();
                 while (!uwr.isDone)
@@ -135,7 +135,7 @@ namespace RanterTools.Networking
 
         static bool PostRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, I> worker, I param,
                                             IWorker<O, I> workerDefault = null,
-                                            string token = null)
+                                            string token = null, params IMultipartFormSection[] parts)
         where W : IWorker<O, I>, new()
         where O : class
         where I : class
@@ -192,8 +192,27 @@ namespace RanterTools.Networking
                     json = worker.Serialize(param);
                     jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
                 }
-                uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
-                uwr.uploadHandler.contentType = "application/json";
+                if (parts != null && parts.Length != 0)
+                {
+                    //TODO:
+                    //Finish it
+                    Debug.Log("WTF");
+                    List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
+                    formData.Add(new MultipartFormDataSection("JSON Body", json, "application/json"));
+                    formData.AddRange(parts);
+                    var boundary = UnityWebRequest.GenerateBoundary();
+                    byte[] formSections = UnityWebRequest.SerializeFormSections(formData, boundary);
+                    uwr = UnityWebRequest.Put($"{requestUrl}", formSections);
+                    uwr.SetRequestHeader("Content-Type", "multipart/form-data; boundary=" + System.Text.Encoding.UTF8.GetString(boundary));
+
+                    uwr.uploadHandler.contentType = "multipart/form-data; boundary=" + System.Text.Encoding.UTF8.GetString(boundary);
+
+                }
+                else
+                {
+                    uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+                    uwr.uploadHandler.contentType = "application/json";
+                }
             }
             uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
 
