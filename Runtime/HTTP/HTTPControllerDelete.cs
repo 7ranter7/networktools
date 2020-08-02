@@ -217,7 +217,7 @@ namespace RanterTools.Networking
                     }
                     ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, Instance.logLimit))}");
 
-                    response = worker.Deserialize(downloadedText);
+                    response = worker.Deserialize<O>(downloadedText);
 
 
                     if (response != null)

@@ -76,6 +76,86 @@ namespace RanterTools.Networking
             JSONGetRequestAsync<W, O>(endpoint, query, worker);
         }
 
+
+
+
+
+
+
+        /// <summary>
+        /// Get request with query input data to send and JSON data receive with session token. Coroutine.
+        /// </summary>
+        /// <param name="endpoint">Endpoint.</param>
+        /// <param name="queryWithBody">Query parameters with body.</param>
+        /// <param name="worker">Custom request worker.</param>
+        /// <typeparam name="W">Worker type.</typeparam>
+        /// <typeparam name="I">Input data type.</typeparam>
+        /// <typeparam name="O">Output type.</typeparam>
+        public static void JSONGetWithBodyAuth<O, I, W>(string endpoint, HTTPGetWithBodyParameter<I> query, IWorker<O, HTTPGetWithBodyParameter<I>> worker = null)
+            where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+            where O : class
+            where I : class
+        {
+            Instance.StartCoroutine(JSONGetWithBodyRequest<O, I, W>(endpoint, query, worker, Token.Token));
+        }
+        /// <summary>
+        /// Get request with query input data to send and JSON data receive. Coroutine.
+        /// </summary>
+        /// <param name="endpoint">Endpoint.</param>
+        /// <param name="queryWithBody">Query parameters with body.</param>
+        /// <param name="worker">Custom request worker.</param>
+        /// <typeparam name="W">Worker type.</typeparam>
+        /// /// <typeparam name="I">Input data type.</typeparam>
+        /// <typeparam name="O">Output type.</typeparam>
+        public static void JSONGetWithBody<O, I, W>(string endpoint, HTTPGetWithBodyParameter<I> query, IWorker<O, HTTPGetWithBodyParameter<I>> worker = null)
+            where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+            where O : class
+            where I : class
+        {
+            Instance.StartCoroutine(JSONGetWithBodyRequest<O, I, W>(endpoint, query, worker));
+        }
+
+        /// <summary>
+        /// Get request with query input data to send and JSON data receive with session token. Async.
+        /// </summary>
+        /// <param name="endpoint">Endpoint.</param>
+        /// <param name="queryWithBody">Query parameters with body.</param>
+        /// <param name="worker">Custom request worker.</param>
+        /// <typeparam name="W">Worker type.</typeparam>
+        /// /// <typeparam name="I">Input data type.</typeparam>
+        /// <typeparam name="O">Output type.</typeparam>
+        public static void JSONGetWithBodyAuthAsync<O, I, W>(string endpoint, HTTPGetWithBodyParameter<I> query, IWorker<O, HTTPGetWithBodyParameter<I>> worker = null)
+           where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+           where O : class
+           where I : class
+        {
+            JSONGetWithBodyRequestAsync<O, I, W>(endpoint, query, worker, Token.Token);
+        }
+        /// <summary>
+        /// Get request with query input data to send and JSON data receive  with session token. Coroutine.
+        /// </summary>
+        /// <param name="endpoint">Endpoint.</param>
+        /// <param name="queryWithBody">Query parameters with body.</param>
+        /// <param name="worker">Custom request worker.</param>
+        /// <typeparam name="W">Worker type.</typeparam>
+        /// /// <typeparam name="I">Input data type.</typeparam>
+        /// <typeparam name="O">Output type.</typeparam>
+        public static void JSONGetWithBodyAsync<O, I, W>(string endpoint, HTTPGetWithBodyParameter<I> query, IWorker<O, HTTPGetWithBodyParameter<I>> worker = null)
+            where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+            where O : class
+            where I : class
+        {
+            JSONGetWithBodyRequestAsync<O, I, W>(endpoint, query, worker);
+        }
+
+
+
+
+
+
+
+
+
         /// <summary>
         /// Get request with query input data to send and Texture2D data receive. Coroutine.
         /// </summary>
@@ -156,6 +236,48 @@ namespace RanterTools.Networking
             GetResponseWorker<O, Dictionary<string, string>>(uwr, workerTmp);
         }
 
+
+
+        static IEnumerator JSONGetWithBodyRequest<O, I, W>(string endpoint, HTTPGetWithBodyParameter<I> query = null, IWorker<O, HTTPGetWithBodyParameter<I>> worker = null, string token = null)
+            where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+            where O : class
+            where I : class
+        {
+            UnityWebRequest uwr;
+            IWorker<O, HTTPGetWithBodyParameter<I>> workerTmp;
+            if (!GetWithBodyRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, query, worker, token))
+            {
+                uwr.SendWebRequest();
+                while (!uwr.isDone)
+                {
+                    workerTmp.Progress((uwr.uploadProgress + uwr.downloadProgress) / 2);
+                    yield return null;
+                }
+            }
+            GetResponseWorker<O, HTTPGetWithBodyParameter<I>>(uwr, workerTmp);
+        }
+
+        static async void JSONGetWithBodyRequestAsync<O, I, W>(string endpoint, HTTPGetWithBodyParameter<I> query = null, IWorker<O, HTTPGetWithBodyParameter<I>> worker = null, string token = null)
+            where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+            where O : class
+            where I : class
+        {
+            UnityWebRequest uwr;
+            IWorker<O, HTTPGetWithBodyParameter<I>> workerTmp;
+            if (!GetWithBodyRequestInit<O, I, W>(endpoint, out uwr, out workerTmp, query, worker, token))
+            {
+                uwr.SendWebRequest();
+                while (!uwr.isDone)
+                {
+                    workerTmp.Progress((uwr.uploadProgress));
+                    await Task.Yield();
+                }
+            }
+            workerTmp.Progress((uwr.downloadProgress));
+            GetResponseWorker<O, HTTPGetWithBodyParameter<I>>(uwr, workerTmp);
+        }
+
+
         static IEnumerator TextureGetRequest<W>(string endpoint, Dictionary<string, string> query = null, IWorker<Texture2D, Dictionary<string, string>> worker = null, string token = null)
        where W : IWorker<Texture2D, Dictionary<string, string>>, new()
         {
@@ -193,8 +315,8 @@ namespace RanterTools.Networking
         static bool GetRequestInit<O, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, Dictionary<string, string>> worker,
                                        Dictionary<string, string> query = null, IWorker<O, Dictionary<string, string>> workerDefault = null,
                                        string token = null)
-       where W : IWorker<O, Dictionary<string, string>>, new()
-       where O : class
+            where W : IWorker<O, Dictionary<string, string>>, new()
+            where O : class
         {
             bool useMock = false;
             url = Instance.urlParam;
@@ -275,6 +397,105 @@ namespace RanterTools.Networking
             return useMock;
         }
 
+
+        static bool GetWithBodyRequestInit<O, I, W>(string endpoint, out UnityWebRequest uwr, out IWorker<O, HTTPGetWithBodyParameter<I>> worker,
+                                       HTTPGetWithBodyParameter<I> query = null, IWorker<O, HTTPGetWithBodyParameter<I>> workerDefault = null,
+                                       string token = null)
+            where W : IWorker<O, HTTPGetWithBodyParameter<I>>, new()
+            where O : class
+            where I : class
+        {
+            bool useMock = false;
+            url = Instance.urlParam;
+            TokenPrefix = Instance.tokenPrefix;
+            string requestUrl = $"{url}/{ endpoint}";
+            if (endpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase)) requestUrl = endpoint;
+            byte[] queryUrlString = null;
+            if (query.query != null)
+            {
+                queryUrlString = UnityWebRequest.SerializeSimpleForm(query.query);
+                requestUrl = $"{requestUrl}?{Encoding.UTF8.GetString(queryUrlString)}";
+            }
+
+            if (typeof(O) == typeof(Texture2D))
+            {
+                if (MocksResource == MocksResource.NONE)
+                    uwr = UnityWebRequestTexture.GetTexture($"{requestUrl}");
+                else
+                {
+                    var key = typeof(W).ToString();
+                    if (!mocks.ContainsKey(key))
+                    {
+                        key = $"GET:{endpoint}";
+                    }
+                    if (mocks.ContainsKey(key))
+                    {
+                        uwr = UnityWebRequestTexture.GetTexture($"{mocks[key]}");
+                        ToolsDebug.Log($"Use mock for texture. Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, Instance.logLimit))}");
+                        useMock = true;
+                    }
+                    else
+                    {
+                        ToolsDebug.Log($"Mocks for key {key} or {key} not found. Try real request.");
+                        uwr = UnityWebRequestTexture.GetTexture($"{requestUrl}");
+                    }
+
+                }
+            }
+            else
+            {
+                uwr = new UnityWebRequest($"{requestUrl}");
+                uwr.method = "GET";
+                uwr.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+                if (MocksResource != MocksResource.NONE)
+                {
+                    var key = typeof(W).ToString();
+                    if (!mocks.ContainsKey(key))
+                    {
+                        key = $"GET:{endpoint}";
+                    }
+                    if (mocks.ContainsKey(key))
+                    {
+                        ToolsDebug.Log($"Use mock for Key:{key} Value:{mocks[key]?.Substring(0, Mathf.Min(mocks[key].Length, Instance.logLimit))}");
+                        useMock = true;
+                    }
+                    else
+                    {
+                        ToolsDebug.Log($"Mocks for key {key} or {key} not found. Try real request.");
+                    }
+                }
+
+
+            }
+            if (!string.IsNullOrEmpty(token))
+                uwr.SetRequestHeader("Authorization", $"{TokenPrefix} {token}");
+
+
+            ToolsDebug.Log($"{UnityWebRequest.kHttpVerbGET}: {requestUrl} {uwr.GetRequestHeader("Authorization")}");
+
+            if (workerDefault == null)
+            {
+                worker = new W();
+            }
+            else
+            {
+                worker = workerDefault;
+            }
+
+            string json = null;
+            byte[] jsonToSend = new byte[1];
+            if (query.param != null)
+            {
+                json = worker.Serialize<I>(query.param);
+                jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+            }
+            uwr.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+            uwr.uploadHandler.contentType = "application/json";
+            worker.Request = query;
+            worker.Start();
+            return useMock;
+        }
+
         static void GetResponseWorker<O, I>(UnityWebRequest unityWebRequest, IWorker<O, I> worker)
         where O : class
         where I : class
@@ -327,8 +548,16 @@ namespace RanterTools.Networking
                             }
                         }
                         ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, Instance.logLimit))}");
-
-                        response = worker.Deserialize(downloadedText);
+                        try
+                        {
+                            response = worker.Deserialize<O>(downloadedText);
+                        }
+                        catch (Exception e)
+                        {
+                            worker.ErrorProcessing(400,"Can't deserialize answer.");
+                            return;
+                        }
+                       
                     }
 
                     if (response != null)
@@ -347,5 +576,12 @@ namespace RanterTools.Networking
             }
         }
         #endregion Global Methods
+    }
+
+
+    public class HTTPGetWithBodyParameter<T> where T : class
+    {
+        public Dictionary<string, string> query;
+        public T param;
     }
 }

@@ -189,14 +189,14 @@ namespace RanterTools.Networking
             {
                 if (param != null)
                 {
-                    json = worker.Serialize(param);
+                    json = worker.Serialize<I>(param);
                     jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
                 }
                 if (parts != null && parts.Length != 0)
                 {
                     //TODO:
                     //Finish it
-                    Debug.Log("WTF");
+                    //Debug.Log("WTF");
                     List<IMultipartFormSection> formData = new List<IMultipartFormSection>();
                     formData.Add(new MultipartFormDataSection("JSON Body", json, "application/json"));
                     formData.AddRange(parts);
@@ -271,7 +271,15 @@ namespace RanterTools.Networking
                         }
                     }
                     ToolsDebug.Log($"Response: {downloadedText?.Substring(0, Mathf.Min(downloadedText.Length, Instance.logLimit))}");
-                    response = worker.Deserialize(downloadedText);
+                    try
+                    {
+                        response = worker.Deserialize<O>(downloadedText);
+                    }
+                    catch (Exception e)
+                    {
+                        worker.ErrorProcessing(400,"Can't deserialize answer.");
+                        return;
+                    }
                     if (response != null || typeof(O) == typeof(string))
                     {
                         worker.Execute(response);
